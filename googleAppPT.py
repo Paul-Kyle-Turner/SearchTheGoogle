@@ -14,8 +14,11 @@ DEFAULT_CONFIG = 'config.ini'
 class GoogleApp:
 
     def __init__(self, args):
-        args, key, self.engine, custom_search_version, self.num_search, self.filename, self.json = self.settings(args)
-        self.resource = build('customsearch', custom_search_version, developerKey=key).cse()
+        # set arguments that are needed
+        key, self.engine, custom_search_version, self.num_search, self.filename, self.json = self.settings(args)
+        # create the resources for the search engine
+        self.service = build('customsearch', custom_search_version, developerKey=key)
+        self.resource = self.service.cse()
 
     @staticmethod
     def settings(args):
@@ -25,30 +28,30 @@ class GoogleApp:
             config.read(DEFAULT_CONFIG)
         else:
             config.read(args.config_file)
-
-        if args.config_file is None:
+        # set the api key or grab the key from config
+        if args.config_file is None or args.key is not None:
             key = config['DEFAULT']['developerKey']
         else:
             key = args.key
-
+        # set the search engine key or grab the key from config
         if args.engine is None:
             engine = config['DEFAULT']['searchEngine']
         else:
             engine = args.engine
         # Setting will be at v1 until version update.  When version updates change to newest version
         custom_search_version = config['DEFAULT']['CSVersion']
-
+        # set the number of search results from either args or config
         if args.num_search is None:
             num_search = config['DEFAULT']['numSearch']
         else:
             num_search = args.num_search
-
+        # set the output file type
         if args.json:
             filename = config['DEFAULT']['jsonOutputFile']
         else:
             filename = config['DEFAULT']['outputFile']
 
-        return args, key, engine, custom_search_version, num_search, filename, args.json
+        return key, engine, custom_search_version, num_search, filename, args.json
 
     def search(self, query):
         result = self.resource.list(q=query, cx=self.engine, num=self.num_search).execute()
@@ -62,7 +65,6 @@ class GoogleApp:
             with open(self.filename, 'w', encoding="utf-8") as file:
                 request_info = result['queries']['request'][0]
                 date = datetime.datetime.now().strftime("%c")
-
                 file.write("Search Terms: {}\n".format(request_info['searchTerms']))
                 file.write("Result Count: {}\n".format(request_info['totalResults']))
                 file.write("Timestamp: {}\n\n".format(date))
