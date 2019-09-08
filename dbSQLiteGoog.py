@@ -5,10 +5,11 @@ from sqlite3 import Error
 
 class SqLite:
 
-    def __init__(self, database_path):
+    def __init__(self, database_path, tables):
         self.connection = None
         self.cursor = None
         self.retry_connection(database_path)
+        self.__create_tables(tables)
 
     def retry_connection(self, database_path):
         if path.exists(database_path):
@@ -22,9 +23,10 @@ class SqLite:
         else:
             print("Failed to find db!")
 
-    def __execute_command(self, command):
-        try:
-            self.cursor.execute(command)
-        except Error as e:
-            print(e)
+    def __create_tables(self, tables):
+        for table in tables:
+            try:
+                self.cursor.execute(table)
+            except Error as e:
+                print(e)
 
