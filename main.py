@@ -92,21 +92,7 @@ def main():
     result = google.search(args.query)
     # Create db object
 
-    sql_create_search_term_table = """CREATE TABLE IF NOT EXISTS search_term (
-                                    id integer PRIMARY KEY
-                                    term text NOT NULL
-                                    );"""
-    sql_create_url_table = """CREATE TABLE IF NOT EXISTS url (
-                                    id integer PRIMARY KEY
-                                    url_snip text NOT NULL
-                                    description text
-                                    FOREIGN KEY (search_term_id) REFERENCES search_term (id)
-                                    );"""
-    sql_create_date_table = """CREATE TABLE IF NOT EXISTS dates (
-                                    id integer PRIMARY KEY
-                                    date TIMESTAMP
-                                    FOREIGN KEY (url_id) REFERENCES url (id)
-                                    );"""
+
     # Write the search to file
     google.to_output(result)
 

@@ -5,13 +5,17 @@
 import json
 import datetime
 from googleapiclient.discovery import build
+from dbSQLiteGoog import SqLiteGoog
+from dbSQLiteGoog import SqLite
+from sqlite3 import Error
 
 
 class GoogleApp:
 
     def __init__(self, key, engine, custom_search_version, num_search,
                  text_filename, json_filename, database_path,
-                 json_output, text_output, db_output):
+                 json_output, text_output, db_output,
+                 tables=None, goog=True):
         # set arguments that are needed
         self.engine = engine
         self.num_search = num_search
@@ -21,6 +25,17 @@ class GoogleApp:
         self.json_output = json_output
         self.text_output = text_output
         self.db_output = db_output
+        if db_output and database_path is not None:
+            if tables is not None and goog is not True:
+                # use a different SqLite database set up
+                # this will require all commands to go through the execute command method
+                self.db = self.sql_db_setup_custom(SqLite, database_path, tables)
+            elif tables is not None and goog:
+                # use different tables then the three defaults
+                # warning this can have unintended effects on the default use of SqLiteGoog
+                self.db = self.sql_db_setup_custom(SqLiteGoog, database_path, tables)
+            else:
+                self.db = self.sql_db_setup(SqLiteGoog, database_path)
         # create the resources for the search engine
         try:
             self.service = build('customsearch', custom_search_version, developerKey=key)
@@ -63,7 +78,31 @@ class GoogleApp:
         with open(self.json_filename, 'w') as file:
             json.dump(result, file)
 
-    def to_sql_db(self, result):
-        print("not done")
+    def sql_db_setup(self, sql_class, database_path):
+        try:
+            self.db = sql_class(database_path)
+        except Error as e:
+            print(e)
+            self.db = None
+        return self.db
 
-        # CREATE SETTERS AND GETTERS
+    def sql_db_setup_custom(self, sql_class, database_path, tables):
+        try:
+            self.db = sql_class(tables, database_path)
+        except Error as e:
+            print(e)
+            self.db = None
+        return self.db
+
+    def to_sql_db(self, result, tables=None):
+        if self.db is None and tables is not None:
+            print("Setup database")
+        if self.db is None:
+            print("DB NONE")
+
+
+
+
+    # CREATE SETTERS AND GETTERS
+
+
