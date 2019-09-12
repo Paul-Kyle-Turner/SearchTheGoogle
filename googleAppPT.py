@@ -148,14 +148,4 @@ class GoogleApp:
     def set_db_output(self, db_output):
         self.db_output = db_output
 
-    engine = property(get_engine, set_engine)
-    num_search = property(get_num_search, set_num_search)
-    text_filename = property(get_text_filename, set_text_filename)
-    json_filename = property(get_json_filename, set_json_filename)
-    database_path = property(get_database_path, set_database_path)
-    json_output = property(get_json_output, set_json_output)
-    text_output = property(get_text_output, set_text_output)
-    db_output = property(get_db_output, set_db_output)
-
-
 
