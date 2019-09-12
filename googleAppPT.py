@@ -100,9 +100,62 @@ class GoogleApp:
         if self.db is None:
             print("DB NONE")
 
+    def get_engine(self):
+        return self.engine
 
+    def set_engine(self, engine):
+        self.engine = engine
 
+    def get_num_search(self):
+        return self.num_search
 
-    # CREATE SETTERS AND GETTERS
+    def set_num_search(self, num_search):
+        self.num_search = num_search
+
+    def get_text_filename(self):
+        return self.text_filename
+
+    def set_text_filename(self, text_filename):
+        self.text_filename = text_filename
+
+    def get_json_filename(self):
+        return self.json_filename
+
+    def set_json_filename(self, json_filename):
+        self.json_filename = json_filename
+
+    def get_database_path(self):
+        return self.database_path
+
+    def set_database_path(self, database_path):
+        self.database_path = database_path
+
+    def get_json_output(self):
+        return self.json_output
+
+    def set_json_output(self, json_output):
+        self.json_output = json_output
+
+    def get_text_output(self):
+        return self.json_output
+
+    def set_text_output(self, text_output):
+        self.text_output = text_output
+
+    def get_db_output(self):
+        return self.db_output
+
+    def set_db_output(self, db_output):
+        self.db_output = db_output
+
+    engine = property(get_engine, set_engine)
+    num_search = property(get_num_search, set_num_search)
+    text_filename = property(get_text_filename, set_text_filename)
+    json_filename = property(get_json_filename, set_json_filename)
+    database_path = property(get_database_path, set_database_path)
+    json_output = property(get_json_output, set_json_output)
+    text_output = property(get_text_output, set_text_output)
+    db_output = property(get_db_output, set_db_output)
+
 
 
