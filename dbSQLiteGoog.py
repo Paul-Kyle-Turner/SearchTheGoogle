@@ -7,22 +7,23 @@ from sqlite3 import Error
 class SqLite:
 
     def __init__(self, database_path):
-        self.connection = None
-        self.retry_connection(database_path)
+        self.database_path = database_path
+        self.connection = self.retry_connection(database_path)
 
-    def retry_connection(self, database_path):
-        if path.exists(database_path):
-            self.connection = None
-            try:
-                self.connection = sqlite3.connect(database_path)
-            except ConnectionError as e:
-                print(e)
-        else:
-            print("Failed to find db!")
+    def retry_connection(self, database_path=None):
+        self.connection = None
+        if database_path is None:
+            database_path = self.database_path
+        try:
+            self.connection = sqlite3.connect(database_path)
+            return self.connection
+        except ConnectionError as e:
+            print(e)
 
     def new_cursor(self):
+        cursor = None
         try:
-            cursor = self.connection.cursor()
+            cursor = self.retry_connection().cursor()
         except Error as e:
             print(e)
         return cursor
@@ -31,6 +32,9 @@ class SqLite:
         try:
             if cursor is None:
                 cursor = self.new_cursor()
+                if cursor is None:
+                    print("FAILED TO CREATE CURSOR")
+            print(command)
             cursor.execute(command)
             return cursor
         except Error as e:
@@ -39,6 +43,9 @@ class SqLite:
     def execute_insert(self, command, variables, cursor=None):
         try:
             if cursor is None:
+                cursor = self.new_cursor()
+                if cursor is None:
+                    print("FAILED TO CREATE CURSOR")
                 cursor = self.new_cursor()
             cursor.execute(command, variables)
             return cursor
@@ -50,24 +57,28 @@ class SqLiteGoog(SqLite):
 
     def __init__(self, database_path, tables=None):
         super().__init__(database_path)
-        if tables is not None:
+        if tables is None:
             tables = ["""CREATE TABLE IF NOT EXISTS search_term (
-                                                        id integer PRIMARY KEY AUTOINCREMENT
-                                                        term text NOT NULL
+                                                        id integer PRIMARY KEY AUTOINCREMENT,
+                                                        term TEXT NOT NULL
                                                         );""",
                       """CREATE TABLE IF NOT EXISTS url (
-                                                        id integer PRIMARY KEY AUTOINCREMENT
-                                                        url_snip text NOT NULL
-                                                        description text
-                                                        FOREIGN KEY (search_term_id) REFERENCES search_term (id)
-                                                        );"""
+                                                        id integer PRIMARY KEY AUTOINCREMENT,
+                                                        title text NOT NULL,
+                                                        link text NOT NULL,
+                                                        description text,
+                                                        search_term_id INTEGER NOT NULL,
+                                                        FOREIGN KEY (search_term_id) REFERENCES search_term(id)
+                                                        );""",
                       """CREATE TABLE IF NOT EXISTS dates (
-                                                        id integer PRIMARY KEY AUTOINCREMENT
-                                                        date TIMESTAMP
-                                                        FOREIGN KEY (url_id) REFERENCES url (id)
+                                                        id integer PRIMARY KEY AUTOINCREMENT,
+                                                        date TIMESTAMP,
+                                                        url_id INTEGER NOT NULL,
+                                                        FOREIGN KEY (url_id) REFERENCES url(id)
                                                         );"""
                       ]
-        self.execute_command(tables)
+        for table in tables:
+            self.execute_command(table)
 
     def select_term_id(self, term):
         row_id = None
@@ -75,9 +86,9 @@ class SqLiteGoog(SqLite):
             row_id = row[0]
         return row_id
 
-    def select_url_id(self, url_snip):
+    def select_url_id(self, link):
         row_id = None
-        for row in self.execute_command('''SELECT id FROM url WHERE url_snip = ?''', url_snip).fetchall():
+        for row in self.execute_command('''SELECT id FROM url WHERE link = ?''', link).fetchall():
             row_id = row[0]
         return row_id
 
@@ -93,13 +104,14 @@ class SqLiteGoog(SqLite):
 
     # URL MUST BE A LIST OF VARIABLES
     # TERM MUST BE A SEARCH TERM PRIMARY KEY
-    def create_url(self, term, url):
-        row_id = self.select_url_id(url[1])
+    def create_url(self, term, title, link, description):
+        row_id = self.select_url_id(link)
         if row_id is not None:
             search_term_id = self.select_term_id(term)
             if search_term_id is not None:
-                cursor = self.execute_insert(''' INSERT INTO url(url_snip, description,search_term_id) 
-                                        VALUES(?,?,?)''', (url[1], url[2], search_term_id))
+
+                cursor = self.execute_insert(''' INSERT INTO url(link, description, search_term_id) 
+                                        VALUES(?,?,?,?)''', (title, link, description, search_term_id))
                 return cursor.lastrowid
         return row_id
 
@@ -107,23 +119,18 @@ class SqLiteGoog(SqLite):
     def create_date(self, url_id, date):
         if date is None:
             date = datetime.datetime.now()
-        variables = [date, url_id]
         cursor = self.execute_insert(''' INSERT OR IGNORE INTO dates(date, url)
-                                    VALUES(?,?)''', variables)
+                                    VALUES(?,?)''', (date, url_id))
         return cursor.lastrowid
 
     def write_result(self, results):
         request_info = results['queries']['request'][0]
         date = datetime.datetime.now().strftime("%c")
         term_id = self.create_search_term(request_info['searchTerms'])
+
         items = results['items']
-        for result in enumerate(items):
-            url_id = self.create_url(term_id, result)
+
+        for item in enumerate(items):
+            url_id = self.create_url(term_id, item['title'], item['link'], item['snippet'])
             self.create_date(url_id, date)
-
-
-
-
-
-
 

@@ -47,6 +47,7 @@ def settings(args):
 
     if args.database is None:
         database_path = config['SQLITE']['databasePath']
+        print(database_path)
     else:
         database_path = args.database
 
@@ -79,8 +80,9 @@ def main():
     parser.add_argument('-ut', '--use_text', action='store_true',
                         help='Use text for output')
     parser.add_argument('-t', '--text',
-                        help='set a database path')
+                        help='set a text path')
     args = parser.parse_args()
+    print(args)
 
     key, engine, custom_search_version, num_search, text_filename, json_filename, database_path = settings(args)
 
