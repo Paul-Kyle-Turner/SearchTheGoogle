@@ -75,17 +75,17 @@ class SqLiteTwit(SqLite):
             self.execute_command(table)
 
     def select_screen_name_id(self, screen_name):
-        results = self.execute_command_variables('''SELECT id FROM screen_name WHERE name = ?;''', screen_name, rc=True)
+        results = self.execute_command_variables('''SELECT id FROM screen_name WHERE name = ?;''', [screen_name], rc=True)
         if results is not None:
             return self.select_row_id(results)
 
     def select_timeline_id(self, tweet):
-        results = self.execute_command_variables('''SELECT id FROM timeline WHERE tweet = ?;''', tweet, rc=True)
+        results = self.execute_command_variables('''SELECT id FROM timeline WHERE tweet = ?;''', [tweet], rc=True)
         if results is not None:
             return self.select_row_id(results)
 
     def select_follower_id(self, screen_name):
-        results = self.execute_command_variables('''SELECT id FROM followers WHERE name = ?;''', screen_name, rc=True)
+        results = self.execute_command_variables('''SELECT id FROM followers WHERE name = ?;''', [screen_name], rc=True)
         if results is not None:
             return self.select_row_id(results)
 
@@ -105,7 +105,7 @@ class SqLiteTwit(SqLite):
                 screen_name_id = self.select_screen_name_id(screen_name)
             last_row_id = self.execute_command_variables("""INSERT INTO timeline
                                                     (id, tweet, link, date, screen_name_id)
-                                                    VALUES(?,?,?,?);""", [None, tweet, link, date, screen_name_id])
+                                                    VALUES(?,?,?,?,?);""", [None, tweet, link, date, screen_name_id])
             return last_row_id
         else:
             return timeline_id
