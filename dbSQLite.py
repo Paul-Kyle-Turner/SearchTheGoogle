@@ -36,13 +36,12 @@ class SqLite:
         except Error as e:
             print(e)
 
-    def execute_command_variables(self, command, variables, cursor=None, rc=False):
+    def execute_command_variables(self, command, variables, rc=False):
         try:
+            connection = self.retry_connection()
+            cursor = connection.cursor()
             if cursor is None:
-                connection = self.retry_connection()
-                cursor = connection.cursor()
-                if cursor is None:
-                    print("FAILED TO CREATE CURSOR")
+                print("FAILED TO CREATE CURSOR")
             cursor.execute(command, variables)
             connection.commit()
             if rc:
