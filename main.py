@@ -47,7 +47,6 @@ def settings(args):
 
     if args.database is None:
         database_path = config['SQLITE']['databasePath']
-        print(database_path)
     else:
         database_path = args.database
 
@@ -82,7 +81,6 @@ def main():
     parser.add_argument('-t', '--text',
                         help='set a text path')
     args = parser.parse_args()
-    print(args)
 
     key, engine, custom_search_version, num_search, text_filename, json_filename, database_path = settings(args)
 
@@ -90,10 +88,10 @@ def main():
     google = GoogleApp(key, engine, custom_search_version, num_search,
                        text_filename, json_filename, database_path,
                        args.use_json, args.use_text, args.use_database)
+
     # Run the search
     result = google.search(args.query)
     # Create db object
-
 
     # Write the search to file
     google.to_output(result)

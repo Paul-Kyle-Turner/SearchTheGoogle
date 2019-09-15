@@ -5,8 +5,8 @@
 import json
 import datetime
 from googleapiclient.discovery import build
-from dbSQLiteGoog import SqLiteGoog
-from dbSQLiteGoog import SqLite
+from dbSQLite import SqLiteGoog
+from dbSQLite import SqLite
 from sqlite3 import Error
 
 
@@ -56,6 +56,7 @@ class GoogleApp:
             self.to_text_file(result)
         if self.db_output:
             self.to_sql_db(result)
+        return result
 
     def to_text_file(self, result):
         with open(self.text_filename, 'w', encoding="utf-8") as file:
@@ -64,15 +65,18 @@ class GoogleApp:
             file.write("Search Terms: {}\n".format(request_info['searchTerms']))
             file.write("Result Count: {}\n".format(request_info['totalResults']))
             file.write("Timestamp: {}\n\n".format(date))
-
         # Write search results to file
-        items = result['items']
-        with open(self.text_filename, 'a', encoding="utf-8") as file:
-            for counter, item in enumerate(items):
-                file.write("Item #{}\n".format(counter + 1))
-                file.write("Title: {}\n".format(item['title']))
-                file.write("Snippet: {}\n".format(item['snippet']))
-                file.write("Link: {}\n\n".format(item['link']))
+        try:
+            items = result['items']
+            with open(self.text_filename, 'a', encoding="utf-8") as file:
+                for counter, item in enumerate(items):
+                    file.write("Item #{}\n".format(counter + 1))
+                    file.write("Title: {}\n".format(item['title']))
+                    file.write("Snippet: {}\n".format(item['snippet']))
+                    file.write("Link: {}\n\n".format(item['link']))
+        except KeyError as e:
+            print("No results found for query")
+            print(e)
 
     def to_json_file(self, result):
         with open(self.json_filename, 'w') as file:
@@ -94,11 +98,31 @@ class GoogleApp:
             self.db = None
         return self.db
 
-    def to_sql_db(self, result, tables=None):
-        if self.db is None and tables is not None:
-            print("Setup database")
-        if self.db is None:
+    def to_sql_db(self, result):
+        if self.db is not None:
+            request_info = result['queries']['request'][0]
+            search_term = request_info['searchTerms']
+            search_term_id = self.db.create_search_term(search_term)
+            for item in result['items']:
+                title = item['title']
+                link = item['link']
+                snippet = item['snippet']
+                url_id = self.db.create_url(search_term_id, title, link, snippet)
+                self.db.create_date(url_id)
+        elif self.db is None:
             print("DB NONE")
+
+    def test_db(self):
+        search_term = 'tavosaldnmaskldn'
+        search_term_id = self.db.create_search_term(search_term)
+        print(search_term_id)
+        title = 'alsdfkl;asdjlasdj'
+        link = 'aaaaaaaaaaaaaaaaaaaaaaa'
+        snippet = 'testtttttttttttttttttttttttttttttttttt'
+        url_id = self.db.create_url(search_term, title, link, snippet, search_term_id)
+        print(url_id)
+        date_id = self.db.create_date(url_id)
+        print(date_id)
 
     def get_engine(self):
         return self.engine
