@@ -130,6 +130,7 @@ def main():
             search_thread = threading.Thread(target=search_thread_function,
                                              args=(google, args.query), name='search_thread')
             search_thread.start()
+            print(f"Gathering data from Google for {count} times")
             # get the number of min for the thread to wait
             sleep_time = int(quantum) * 60
             time.sleep(sleep_time)
