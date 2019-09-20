@@ -1,8 +1,30 @@
 import argparse
 import configparser
 from googleAppPT import GoogleApp
+import threading
+from signal import signal, SIGINT
+import sys
+import time
 
 DEFAULT_CONFIG = 'config.ini'
+ctrl_c = False
+search_thread = None
+
+# used to always exit on a sleep so that no thread gets cut off
+def handel_ctrl_c(signal_received, frame):
+    global ctrl_c
+    global search_thread
+    ctrl_c = True
+    while search_thread is not None:
+        time.sleep(.5)
+        if not search_thread.is_alive():
+            search_thread = None
+    sys.exit(0)
+
+
+def search_thread_function(searcher, query):
+    result = searcher.search(query)
+    searcher.to_output(result)
 
 
 def settings(args):
@@ -50,10 +72,16 @@ def settings(args):
     else:
         database_path = args.database
 
-    return key, engine, custom_search_version, num_search, text_filename, json_filename, database_path
+    if args.quantum is None:
+        quantum = config['CONTINUE']['quantum']
+    else:
+        quantum = args.quantum
+
+    return key, engine, custom_search_version, num_search, text_filename, json_filename, database_path, quantum
 
 
 def main():
+    signal(SIGINT, handel_ctrl_c)
     # Argument parser for simple settings changes
     parser = argparse.ArgumentParser()
     parser.add_argument('query', help='Search query')
@@ -80,9 +108,15 @@ def main():
                         help='Use text for output')
     parser.add_argument('-t', '--text',
                         help='set a text path')
+
+    parser.add_argument('-gd', '--gather_data', action='store_true',
+                        help='Gather data from google results for every quantum of time')
+    parser.add_argument('-q', '--quantum', type=int,
+                        help='A quantum of time for gathering data')
     args = parser.parse_args()
 
-    key, engine, custom_search_version, num_search, text_filename, json_filename, database_path = settings(args)
+    key, engine, custom_search_version, num_search, \
+        text_filename, json_filename, database_path, quantum = settings(args)
 
     # Create the googleApp class for searches
     google = GoogleApp(key, engine, custom_search_version, num_search,
@@ -90,11 +124,18 @@ def main():
                        args.use_json, args.use_text, args.use_database)
 
     # Run the search
-    result = google.search(args.query)
-    # Create db object
-
-    # Write the search to file
-    google.to_output(result)
+    if args.gather_data:
+        while not ctrl_c:
+            global search_thread
+            search_thread = threading.Thread(target=search_thread_function,
+                                             args=(google, args.query), name='search_thread')
+            search_thread.start()
+            # get the number of min for the thread to wait
+            sleep_time = int(quantum) * 60
+            time.sleep(sleep_time)
+    else:
+        result = google.search(args.query)
+        google.to_output(result)
 
 
 if __name__ == '__main__':
