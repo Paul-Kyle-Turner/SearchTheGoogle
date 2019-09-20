@@ -110,7 +110,8 @@ def main():
                         help='set a text path')
 
     parser.add_argument('-gd', '--gather_data', action='store_true',
-                        help='Gather data from google results for every quantum of time')
+                        help='''Gather data from google results for every quantum of time.
+                          Kill off the process by pressing cntl-c.''')
     parser.add_argument('-q', '--quantum', type=int,
                         help='A quantum of time for gathering data')
     args = parser.parse_args()
@@ -128,6 +129,8 @@ def main():
                        text_filename, json_filename, database_path,
                        args.use_json, args.use_text, args.use_database)
 
+    count = 0
+    
     # Run the search
     if args.gather_data:
         while not ctrl_c:
