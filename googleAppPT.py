@@ -25,7 +25,7 @@ class GoogleApp:
         self.json_output = json_output
         self.text_output = text_output
         self.db_output = db_output
-        if db_output and database_path is not None:
+        if db_output is True and database_path is not None:
             if tables is not None and goog is not True:
                 # use a different SqLite database set up
                 # this will require all commands to go through the execute command method
@@ -107,7 +107,7 @@ class GoogleApp:
                 title = item['title']
                 link = item['link']
                 snippet = item['snippet']
-                url_id = self.db.create_url(search_term_id, title, link, snippet)
+                url_id = self.db.create_url(search_term, title, link, snippet, search_term_id)
                 self.db.create_date(url_id)
         elif self.db is None:
             print("DB NONE")
@@ -115,14 +115,11 @@ class GoogleApp:
     def test_db(self):
         search_term = 'tavosaldnmaskldn'
         search_term_id = self.db.create_search_term(search_term)
-        print(search_term_id)
         title = 'alsdfkl;asdjlasdj'
         link = 'aaaaaaaaaaaaaaaaaaaaaaa'
         snippet = 'testtttttttttttttttttttttttttttttttttt'
         url_id = self.db.create_url(search_term, title, link, snippet, search_term_id)
-        print(url_id)
         date_id = self.db.create_date(url_id)
-        print(date_id)
 
     def get_engine(self):
         return self.engine
