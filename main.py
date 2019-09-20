@@ -118,6 +118,11 @@ def main():
     key, engine, custom_search_version, num_search, \
         text_filename, json_filename, database_path, quantum = settings(args)
 
+    if args.gather_data is True:
+        args.use_database = True
+        args.use_text = False
+        args.use_json = False
+
     # Create the googleApp class for searches
     google = GoogleApp(key, engine, custom_search_version, num_search,
                        text_filename, json_filename, database_path,
