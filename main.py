@@ -10,8 +10,9 @@ DEFAULT_CONFIG = 'config.ini'
 ctrl_c = False
 search_thread = None
 
-# used to always exit on a sleep so that no thread gets cut off
+
 def handel_ctrl_c(signal_received, frame):
+    # used to always exit on a sleep so that no thread gets cut off
     global ctrl_c
     global search_thread
     ctrl_c = True
@@ -114,6 +115,11 @@ def main():
                           Kill off the process by pressing cntl-c.''')
     parser.add_argument('-q', '--quantum', type=int,
                         help='A quantum of time for gathering data')
+
+    parser.add_argument('-mq', '--multi_query', nargs='*',
+                        help='''flag used to grab many different keyword tweets along with the first query.
+                            Multi_query must be used with gather_data flag''')
+
     args = parser.parse_args()
 
     key, engine, custom_search_version, num_search, \
@@ -130,21 +136,30 @@ def main():
                        args.use_json, args.use_text, args.use_database)
 
     count = 0
-    
+    q_list = []
+    if args.multi_query:
+        q_list = args.multi_query
+        q_list.append(args.query)
+    else:
+        q_list.append(args.query)
+
     # Run the search
     if args.gather_data:
         while not ctrl_c:
             global search_thread
-            search_thread = threading.Thread(target=search_thread_function,
-                                             args=(google, args.query), name='search_thread')
-            search_thread.start()
+            for query in q_list:
+                search_thread = threading.Thread(target=search_thread_function,
+                                                 args=(google, query), name='search_thread')
+                search_thread.start()
+            count = count + 1
             print(f"Gathering data from Google for {count} times")
             # get the number of min for the thread to wait
             sleep_time = int(quantum) * 60
             time.sleep(sleep_time)
     else:
-        result = google.search(args.query)
-        google.to_output(result)
+        for query in q_list:
+            result = google.search(query)
+            google.to_output(result)
 
 
 if __name__ == '__main__':
